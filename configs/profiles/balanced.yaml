@@ -1,0 +1,8 @@
+name: balanced
+description: Conservative starting point for a four-core Arm64 VM.
+generation_threads: auto
+prompt_threads: auto
+batch_size: 512
+micro_batch_size: 256
+context_size: 4096
+memory_guardrail_percent: 80

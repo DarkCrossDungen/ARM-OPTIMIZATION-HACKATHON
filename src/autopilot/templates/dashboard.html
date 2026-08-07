@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ArmDX Remote Console</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}?v=20260806-1">
+</head>
+<body>
+<!-- THESIS: ArmDX is a private remote operations console where connection truth and reproducible benchmark control dominate; it refuses promotional heroes and card grids. OWN-WORLD: warm off-white work sheets, near-black navigation, cobalt operational signals, sage verified states, open ruled sections, and red reserved only for faults. STORY: the operator verifies the secure link, configures one run, watches execution, then audits results and history. FIRST VIEWPORT: a narrow command rail, compact status bar, a cobalt connection field, and an open run workspace with execution beside it. FORM: editorial operations sheet in Operate mode. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#overview" aria-label="ArmDX console home"><span class="brand-mark">A</span><span><strong>ArmDX</strong><small>Remote console</small></span></a>
+    <nav aria-label="Console navigation">
+      <a class="active" href="#overview"><span>Overview</span><small>System state</small></a>
+      <a href="#connection"><span>Connection</span><small>VM and tunnel</small></a>
+      <a href="#run-setup"><span>Run setup</span><small>Benchmark inputs</small></a>
+      <a href="#execution"><span>Execution</span><small>Queue and logs</small></a>
+      <a href="#results"><span>Results</span><small>Measured evidence</small></a>
+      <a href="#history"><span>History</span><small>Previous runs</small></a>
+      <a href="#security"><span>Security</span><small>Access controls</small></a>
+    </nav>
+    <div class="sidebar-foot"><span class="status-dot warning"></span><span><strong>Local preview</strong><small>Remote VM absent</small></span></div>
+  </aside>
+
+  <div class="console">
+    <header class="topbar">
+      <div><h1>Remote optimization console</h1><p>Control and verify one Arm64 benchmark host.</p></div>
+      <div class="top-actions"><button class="quiet" id="refresh-state" type="button">Refresh status</button><span class="connection-chip" aria-label="Oracle Arm64 VM not connected"><i></i>Disconnected</span></div>
+    </header>
+
+    <main class="workspace" id="overview">
+      <section class="status-strip" aria-label="System status">
+        <div><span>VM</span><strong id="vm-state">Not configured</strong><small>No host address</small></div>
+        <div><span>SSH tunnel</span><strong id="tunnel-state">Not configured</strong><small>OpenSSH installed locally</small></div>
+        <div><span>Remote API</span><strong id="api-state">Unreachable</strong><small>No heartbeat received</small></div>
+        <div><span>Runner</span><strong id="runner-state">Unavailable</strong><small>llama.cpp pending on VM</small></div>
+      </section>
+
+      <section class="panel connection-panel" id="connection">
+        <div class="panel-head"><div><h2>Connection</h2><p>One private route from this browser to the Arm64 benchmark service.</p></div><span class="state-tag pending">Setup required</span></div>
+        <div class="connection-layout">
+          <div class="connection-route" aria-label="Connection route">
+            <div class="route-node"><span>Your laptop</span><strong>127.0.0.1:8000</strong><small>ArmDX opens here</small></div>
+            <div class="tunnel-segment"><span>SSH local forward</span><i></i><small>Encrypted · not running</small></div>
+            <div class="route-node remote"><span>Arm64 VM service</span><strong>127.0.0.1:8000</strong><small>Private on the VM</small></div>
+          </div>
+          <dl class="connection-facts">
+            <div><dt>VM address</dt><dd>Not configured</dd></div>
+            <div><dt>SSH user</dt><dd>ubuntu</dd></div>
+            <div><dt>Identity key</dt><dd>Not configured</dd></div>
+            <div><dt>Last heartbeat</dt><dd>Never</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <div class="primary-grid">
+        <section class="panel run-panel" id="run-setup">
+          <div class="panel-head"><div><h2>Choose an optimization goal</h2><p>ArmDX sends this goal through your SSH tunnel, builds Arm candidates on the VM, and keeps only measured evidence.</p></div><span class="state-tag neutral">Arm-first</span></div>
+          <form id="optimizer-form">
+            <input type="hidden" name="objective" value="generation_speed">
+            <section class="mode-step span-2" aria-label="Optimization mode">
+              <div class="mode-grid"><label><input type="radio" name="mode" value="speed" checked><span><strong>Speed Mode</strong><small>Maximum generated tokens per second.</small></span></label><label><input type="radio" name="mode" value="quality"><span><strong>Quality Mode</strong><small>Keep the highest-fidelity result possible.</small></span></label><label><input type="radio" name="mode" value="lightweight"><span><strong>Lightweight Mode</strong><small>Use the least RAM and disk space.</small></span></label><label><input type="radio" name="mode" value="serve_more"><span><strong>Serve More Users</strong><small>Tune the inference server for concurrency.</small></span></label><label><input type="radio" name="mode" value="custom"><span><strong>Custom</strong><small>Set simple limits yourself.</small></span></label></div>
+              <p id="mode-explanation" class="mode-explanation">ArmDX will compare Q4/Q5 GGUF candidates and Arm runtime builds for generation speed.</p>
+            </section>
+            <section class="setup-step model-step span-2"><div class="step-heading"><span>Source model</span><small>Downloaded and converted only on the Arm VM</small></div><label class="model-choice"><span>Hugging Face model</span><select name="model_name" id="model-name"><option value="Qwen/Qwen2.5-1.5B-Instruct">Qwen 2.5 Instruct · 1.54B · BF16 source</option></select></label><div class="model-facts"><div><span>Source</span><strong>Hugging Face</strong></div><div><span>Conversion</span><strong>BF16 → GGUF</strong></div><div><span>Arm runtime</span><strong>KleidiAI</strong></div><div><span>Evidence</span><strong>Before / after</strong></div></div></section>
+            <section class="custom-step span-2" id="custom-controls" hidden><div class="step-heading"><span>Custom limits</span><small>ArmDX searches only candidates that satisfy these limits</small></div><div class="workload-fields"><label><span>Maximum RAM</span><select name="memory_budget_gb"><option value="2">2 GB</option><option value="4" selected>4 GB</option><option value="6">6 GB</option><option value="8">8 GB</option></select></label><label><span>Response start</span><select name="response_start_priority"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="fastest">Fastest</option></select></label><label><span>Quality floor</span><select name="quality_floor"><option value="basic">Basic</option><option value="good" selected>Good</option><option value="highest">Highest</option></select></label></div></section>
+            <input type="hidden" name="memory_budget_gb" value="6" id="default-memory-budget"><input type="hidden" name="response_start_priority" value="balanced" id="default-response-priority"><input type="hidden" name="quality_floor" value="good" id="default-quality-floor"><input type="hidden" name="vm_memory_gb" value="16"><input type="hidden" name="context_size" value="4096"><input type="hidden" name="memory_guardrail_percent" value="75">
+            <section class="setup-step span-2"><div class="step-heading"><span>Benchmark workload</span><small>Kept identical for baseline and every candidate</small></div><div class="workload-fields"><label><span>Conversation size</span><select name="context_size_display"><option value="2048">Short</option><option value="4096" selected>Standard</option><option value="8192">Long</option></select></label><label><span>Answer length</span><select name="answer_length"><option value="short">Short</option><option value="standard" selected>Standard</option><option value="long">Long</option></select></label></div></section>
+            <div class="measurement-note span-2"><span>Measured on Arm</span><strong>Tokens/sec, time to first token, peak RAM, and GGUF size</strong><small>Serve More Users also measures concurrent server throughput. No value is shown until the VM has run the benchmark.</small></div>
+            <details class="advanced-settings span-2"><summary>Advanced engine controls <span>Optional</span></summary><div class="advanced-content"><p>These are the lower-level llama.cpp values ArmDX normally tunes automatically.</p><div class="field-grid four"><label><span>Generation threads</span><input name="generation_threads" type="number" value="4" min="1" max="128"></label><label><span>Prompt threads</span><input name="prompt_threads" type="number" value="4" min="1" max="128"></label><label><span>Batch size</span><input name="batch_size" type="number" value="512" min="32" max="4096"></label><label><span>Micro-batch size</span><input name="micro_batch_size" type="number" value="128" min="16" max="1024"></label><label><span>Prompt tokens</span><input name="prompt_tokens" type="number" value="512" min="32" max="8192"></label><label><span>Generation tokens</span><input name="generation_tokens" type="number" value="256" min="16" max="4096"></label><label><span>Test repetitions</span><input name="repetitions" type="number" value="3" min="1" max="10"></label></div></div></details>
+            <div class="form-actions span-2"><p>ArmDX will create an evidence-backed optimization recipe. The VM must be connected before candidates can be built or served.</p><button class="primary" type="submit">Create Arm optimization recipe</button></div>
+          </form>
+        </section>
+
+        <section class="panel execution-panel" id="execution">
+          <div class="panel-head"><div><h2>Execution</h2><p>Queue, phases, and remote output.</p></div><span class="state-tag neutral" id="job-state">Idle</span></div>
+          <div class="empty-execution"><span class="execution-glyph">0</span><div><strong>No active job</strong><p>Configure a run, then start it when the VM connection is ready.</p></div></div>
+          <ol class="phases"><li><span></span><div><strong>Validate request</strong><small>Waiting</small></div></li><li><span></span><div><strong>Measure baseline</strong><small>Waiting</small></div></li><li><span></span><div><strong>Search candidates</strong><small>Waiting</small></div></li><li><span></span><div><strong>Confirm best profile</strong><small>Waiting</small></div></li></ol>
+          <div class="progress"><span style="width:0%"></span></div>
+          <div class="log-head"><span>Remote log</span><button class="text-button" type="button" disabled>Download raw log</button></div>
+          <pre id="job-log">[local] Waiting for an Arm64 VM connection.</pre>
+          <div class="execution-actions"><button class="quiet" type="button" disabled>Cancel job</button><span id="job-status" role="status">No optimization job started.</span></div>
+        </section>
+      </div>
+
+      <section class="panel results-panel" id="results">
+        <div class="panel-head"><div><h2>Results</h2><p>Measured values only. No Arm benchmark exists yet.</p></div><span class="state-tag neutral">No evidence</span></div>
+        <div class="metric-table" role="table" aria-label="Baseline versus optimized results">
+          <div class="metric-row header" role="row"><span>Metric</span><span>Baseline</span><span>Optimized</span><span>Change</span></div>
+          <div class="metric-row" role="row"><strong>GGUF model size</strong><span>Not measured</span><span>Not measured</span><span>Not measured</span></div>
+          <div class="metric-row" role="row"><strong>Peak RAM</strong><span>Not measured</span><span>Not measured</span><span>Not measured</span></div>
+          <div class="metric-row" role="row"><strong>Time to first token</strong><span>Not measured</span><span>Not measured</span><span>Not measured</span></div>
+          <div class="metric-row" role="row"><strong>Token generation</strong><span>Not measured</span><span>Not measured</span><span>Not measured</span></div>
+          <div class="metric-row" role="row"><strong>Quality gate</strong><span>Not measured</span><span>Not measured</span><span>Not measured</span></div>
+        </div>
+        <div class="evidence-note"><span class="status-dot ready"></span><p>Raw command output, exact runtime flags, model identity, VM metadata, and timestamps will be retained with every completed run.</p><button class="quiet" type="button" disabled>Apply and start optimized model</button></div>
+        <div class="sample-evidence"><div><strong>Need to see the final report shape?</strong><p>Sample evidence is clearly separate from your VM history and cannot be applied as an optimized model.</p></div><button class="quiet" id="view-sample" type="button">View sample evidence</button></div>
+        <div id="sample-evidence-output" class="sample-evidence-output" hidden aria-live="polite"></div>
+      </section>
+
+      <section class="panel history-panel" id="history">
+        <div class="panel-head"><div><h2>Run history</h2><p>Preview submissions appear here without fabricated results.</p></div><button class="quiet" type="button" id="refresh-history">Refresh</button></div>
+        <div class="history-table"><div class="history-row head"><span>Run</span><span>Target</span><span>Status</span><span>Created</span><span>Evidence</span></div><div id="history-rows" class="history-empty">No runs recorded in this session.</div></div>
+      </section>
+
+      <section class="panel security-panel" id="security">
+        <div class="panel-head"><div><h2>Security</h2><p>Local prerequisites are prepared; VM controls remain pending until provisioning.</p></div><span class="state-tag pending">2 of 6 prepared</span></div>
+        <div class="security-list">
+          <div><span class="check ready">OK</span><p><strong>Windows OpenSSH client</strong><small>Installed: OpenSSH 9.5</small></p><b class="status-text ready">Ready</b></div>
+          <div><span class="check ready">OK</span><p><strong>Dashboard port remains private</strong><small>Remote service is designed to bind to 127.0.0.1:8000</small></p><b class="status-text ready">Prepared</b></div>
+          <div><span class="check">3</span><p><strong>SSH identity key</strong><small>Create after the VM provider and hostname are known</small></p><b class="status-text">Pending VM</b></div>
+          <div><span class="check">4</span><p><strong>Key-only login</strong><small>VM hardening script disables password and root login</small></p><b class="status-text">Pending VM</b></div>
+          <div><span class="check">5</span><p><strong>Port 22 restricted to your IP</strong><small>Requires your current public IP and cloud firewall</small></p><b class="status-text">Pending VM</b></div>
+          <div><span class="check">6</span><p><strong>Security verification</strong><small>Confirm sshd, listener, firewall, and tunnel before benchmarking</small></p><b class="status-text">Pending VM</b></div>
+        </div>
+        <div class="command-block"><div><span>Local tunnel command</span><button id="copy-command" class="text-button" type="button">Copy</button></div><code id="tunnel-command">.\scripts\start-ssh-tunnel.ps1 -VmHost VM_PUBLIC_IP -KeyPath C:\path\to\key</code></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script>
+if (false) {
+const numericFields=['context_size','memory_guardrail_percent','vm_memory_gb','memory_budget_gb','generation_threads','prompt_threads','batch_size','micro_batch_size','prompt_tokens','generation_tokens','repetitions'];
+const form=document.querySelector('#optimizer-form'),jobStatus=document.querySelector('#job-status'),jobLog=document.querySelector('#job-log'),jobState=document.querySelector('#job-state');
+const modelSelect=document.querySelector('#model-name'),vmMemory=document.querySelector('#vm-memory'),memoryBudget=document.querySelector('#memory-budget'),memoryOutput=document.querySelector('#memory-budget-output'),memoryHelp=document.querySelector('#memory-budget-help'),memoryGuardrail=document.querySelector('#memory-guardrail'),answerLength=document.querySelector('#answer-length'),generationTokens=document.querySelector('#generation-tokens');
+const engineFields={generation_threads:document.querySelector('#generation-threads'),prompt_threads:document.querySelector('#prompt-threads'),batch_size:document.querySelector('#batch-size'),micro_batch_size:document.querySelector('#micro-batch-size'),repetitions:document.querySelector('#repetitions')};
+const speedPlans={fastest:{generation_threads:4,prompt_threads:4,batch_size:1024,micro_batch_size:512,repetitions:4},fast:{generation_threads:4,prompt_threads:4,batch_size:768,micro_batch_size:256,repetitions:3},medium:{generation_threads:3,prompt_threads:3,batch_size:512,micro_batch_size:128,repetitions:3},slow:{generation_threads:2,prompt_threads:2,batch_size:256,micro_batch_size:64,repetitions:2}};
+function selectedModel(){return modelSelect.options[modelSelect.selectedIndex]}
+function updateModelFacts(){const option=selectedModel();document.querySelector('#model-parameters').textContent=option.dataset.parameters||'Unknown';document.querySelector('#model-quantization').textContent=option.dataset.quantization||'Unknown';document.querySelector('#model-file-size').textContent=option.dataset.fileSize?`~${option.dataset.fileSize} GB`:'Unknown';document.querySelector('#model-min-memory').textContent=`${Number(option.dataset.minMemory||2)} GB estimated`}
+function memoryChoices(minimum,total){return [...new Set([minimum,Math.ceil(minimum+1),4,6,8,12,16,24,32].filter(value=>value>=minimum&&value<=total))].sort((a,b)=>a-b)}
+function syncMemoryBudget(){const minimum=Number(selectedModel().dataset.minMemory||2),total=Number(vmMemory.value);memoryBudget.min=minimum;memoryBudget.max=total;if(Number(memoryBudget.value)<minimum)memoryBudget.value=minimum;if(Number(memoryBudget.value)>total)memoryBudget.value=total;const budget=Number(memoryBudget.value);memoryOutput.value=`${budget} GB`;memoryOutput.textContent=`${budget} GB`;memoryHelp.textContent=`Choose from ${minimum} GB to ${total} GB`;memoryGuardrail.value=Math.max(1,Math.min(100,Math.round((budget/total)*100)));const host=document.querySelector('#memory-presets');host.innerHTML=memoryChoices(minimum,total).map(value=>`<button type="button" class="memory-preset${value===budget?' active':''}" data-memory="${value}" aria-pressed="${value===budget}">${value} GB</button>`).join('');host.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{memoryBudget.value=button.dataset.memory;syncMemoryBudget()}));document.querySelector('#memory-explanation').textContent=`The ${minimum} GB floor is the current estimate for this model's weights and runtime buffers. More RAM can support larger batches and longer conversations.`;updateModelFacts()}
+function syncProfile(){const profile=new FormData(form).get('profile'),plan=speedPlans[profile];Object.entries(plan).forEach(([key,value])=>engineFields[key].value=value);document.querySelector('#advanced-mode-label').textContent=`Following ${profile==='fastest'?'Fastest possible':profile[0].toUpperCase()+profile.slice(1)} preset`}
+function syncAnswerLength(){generationTokens.value={short:128,standard:256,long:512}[answerLength.value]}
+async function loadModels(){try{const response=await fetch('/api/models'),models=await response.json();if(!response.ok||!models.length)return;modelSelect.innerHTML=models.map(model=>`<option value="${model.id}" data-min-memory="${model.estimated_minimum_memory_gb}" data-file-size="${model.estimated_file_gb}" data-parameters="${model.parameters}" data-quantization="${model.quantization}">${model.name} — ${model.parameters} — ${model.quantization}</option>`).join('');syncMemoryBudget()}catch(error){console.warn('Model catalog unavailable',error)}}
+async function loadState(){const response=await fetch('/api/console-state');const state=await response.json();document.querySelector('#vm-state').textContent=state.connection.vm.replaceAll('-',' ');document.querySelector('#tunnel-state').textContent=state.connection.ssh_tunnel.replaceAll('-',' ');document.querySelector('#api-state').textContent=state.connection.remote_service;document.querySelector('#runner-state').textContent=state.runtime.runner_status.replaceAll('-',' ')}
+async function loadHistory(){const response=await fetch('/api/optimization-jobs');const runs=await response.json();const host=document.querySelector('#history-rows');if(!runs.length){host.className='history-empty';host.textContent='No runs recorded in this session.';return}host.className='';host.innerHTML=runs.map(run=>`<div class="history-row"><code>${run.id.slice(0,8)}</code><span>${run.request.profile.replaceAll('_',' ')}</span><b>${run.status.replaceAll('_',' ')}</b><span>${new Date(run.created_at).toLocaleTimeString()}</span><span>${run.result?'Available':'None'}</span></div>`).join('')}
+form.addEventListener('submit',async event=>{event.preventDefault();const data=Object.fromEntries(new FormData(form));numericFields.forEach(key=>data[key]=Number(data[key]));jobStatus.textContent='Creating job...';jobState.textContent='Queued';jobLog.textContent='[local] Request accepted by the preview controller.';try{const response=await fetch('/api/optimization-jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),job=await response.json();if(!response.ok)throw new Error(Array.isArray(job.detail)?job.detail.map(item=>item.msg).join(', '):job.detail);jobStatus.textContent=job.message;setTimeout(async()=>{const update=await fetch('/api/optimization-jobs/'+job.id),current=await update.json();jobState.textContent=current.status.replaceAll('_',' ');jobStatus.textContent=current.message;jobLog.textContent='[local] '+current.message;loadHistory()},400)}catch(error){jobState.textContent='Failed';jobStatus.textContent=error.message;jobLog.textContent='[error] '+error.message}});
+document.querySelector('#refresh-state').addEventListener('click',loadState);document.querySelector('#refresh-history').addEventListener('click',loadHistory);document.querySelector('#copy-command').addEventListener('click',async event=>{await navigator.clipboard.writeText(document.querySelector('#tunnel-command').textContent);event.currentTarget.textContent='Copied';setTimeout(()=>event.currentTarget.textContent='Copy',1200)});
+modelSelect.addEventListener('change',syncMemoryBudget);vmMemory.addEventListener('change',syncMemoryBudget);memoryBudget.addEventListener('input',syncMemoryBudget);form.querySelectorAll('[name="profile"]').forEach(input=>input.addEventListener('change',syncProfile));answerLength.addEventListener('change',syncAnswerLength);syncMemoryBudget();syncProfile();syncAnswerLength();loadModels();loadState();loadHistory();
+}
+</script>
+<script>
+const numericFields=['context_size','memory_guardrail_percent','vm_memory_gb','memory_budget_gb','generation_threads','prompt_threads','batch_size','micro_batch_size','prompt_tokens','generation_tokens','repetitions'];
+const form=document.querySelector('#optimizer-form'),jobStatus=document.querySelector('#job-status'),jobLog=document.querySelector('#job-log'),jobState=document.querySelector('#job-state');
+const customControls=document.querySelector('#custom-controls'),customFields=[...customControls.querySelectorAll('select')],defaultFields=[...document.querySelectorAll('#default-memory-budget,#default-response-priority,#default-quality-floor')],modeExplanation=document.querySelector('#mode-explanation');
+const modeCopy={speed:'ArmDX will compare Q4/Q5 GGUF candidates and Arm runtime builds for maximum generation speed.',quality:'ArmDX will compare BF16, Q8, and Q6 GGUF candidates, then retain the best quality that fits the VM.',lightweight:'ArmDX will compare Q2/Q3/Q4 GGUF candidates and retain the smallest safe footprint.',serve_more:'ArmDX will benchmark concurrent llama-server requests with throughput-focused Q4/Q5 candidates.',custom:'ArmDX will search candidates that meet your RAM, response-start, and quality limits.'};
+function syncMode(){const mode=new FormData(form).get('mode'),custom=mode==='custom';customControls.hidden=!custom;customFields.forEach(field=>field.disabled=!custom);defaultFields.forEach(field=>field.disabled=custom);modeExplanation.textContent=modeCopy[mode]}
+async function loadState(){try{const response=await fetch('/api/console-state'),state=await response.json();document.querySelector('#vm-state').textContent=state.connection.vm.replaceAll('-',' ');document.querySelector('#tunnel-state').textContent=state.connection.ssh_tunnel.replaceAll('-',' ');document.querySelector('#api-state').textContent=state.connection.remote_service;document.querySelector('#runner-state').textContent=state.runtime.runner_status.replaceAll('-',' ')}catch(error){console.warn('Console state unavailable',error)}}
+async function loadHistory(){const response=await fetch('/api/optimization-jobs'),runs=await response.json(),host=document.querySelector('#history-rows');if(!runs.length){host.className='history-empty';host.textContent='No runs recorded in this session.';return}host.className='';host.innerHTML=runs.map(run=>`<div class="history-row"><span><code>${run.id.slice(0,8)}</code></span><span>${run.request.mode.replaceAll('_',' ')}</span><span>${run.status.replaceAll('_',' ')}</span><span>${new Date(run.created_at).toLocaleTimeString()}</span><span>${run.result?'Measured':'Recipe only'}</span></div>`).join('')}
+form.addEventListener('submit',async event=>{event.preventDefault();const payload=Object.fromEntries(new FormData(form));numericFields.forEach(key=>payload[key]=Number(payload[key]));jobState.textContent='Preparing';jobStatus.textContent='Creating Arm optimization recipe…';jobLog.textContent='[local] Validating goal and preparing Arm candidate plan…';const response=await fetch('/api/optimization-jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),job=await response.json();if(!response.ok){jobState.textContent='Needs attention';jobStatus.textContent=job.detail||'Could not create job.';jobLog.textContent=`[local] ${jobStatus.textContent}`;return}const candidates=job.optimization_plan.candidates.map(candidate=>`[plan] ${candidate.quantization} · ${candidate.runtime_build}`).join('\\n');jobState.textContent='Waiting for VM';jobStatus.textContent=job.message;jobLog.textContent=`[local] Job ${job.id}\\n[goal] ${job.request.mode.replaceAll('_',' ')}\\n${candidates}\\n[local] Connect the Arm VM before building or benchmarking.`;loadHistory()});
+document.querySelectorAll('input[name="mode"]').forEach(input=>input.addEventListener('change',syncMode));document.querySelector('#refresh-state').addEventListener('click',()=>{loadState();loadHistory()});document.querySelector('#refresh-history').addEventListener('click',loadHistory);document.querySelector('#copy-command').addEventListener('click',async()=>{await navigator.clipboard.writeText(document.querySelector('#tunnel-command').textContent);document.querySelector('#copy-command').textContent='Copied';setTimeout(()=>document.querySelector('#copy-command').textContent='Copy',1200)});syncMode();loadState();loadHistory();
+const sampleButton=document.querySelector('#view-sample'),sampleOutput=document.querySelector('#sample-evidence-output');sampleButton.addEventListener('click',async()=>{const mode=new FormData(form).get('mode');sampleButton.disabled=true;sampleButton.textContent='Loading sample…';try{const response=await fetch(`/api/sample-evidence/${mode}`),sample=await response.json();sampleOutput.hidden=false;sampleOutput.innerHTML=`<strong>${sample.label}</strong><p>${sample.focus}: ${Object.values(sample.metrics).join(' · ')}</p><small>${sample.note}</small>`}catch(error){sampleOutput.hidden=false;sampleOutput.textContent='Sample evidence could not be loaded. Try again.'}finally{sampleButton.disabled=false;sampleButton.textContent='View sample evidence'}});
+</script>
+</body>
+</html>

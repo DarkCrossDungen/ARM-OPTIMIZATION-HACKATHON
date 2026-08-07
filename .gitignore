@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# JavaScript
+node_modules/
+dist/
+
+# Runtime data and downloaded models
+models/*.gguf
+models/*.bin
+results/
+*.sqlite3
+.env
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

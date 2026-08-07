@@ -1,0 +1,18 @@
+[Unit]
+Description=ArmDX private Arm64 optimization service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/armdx
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/armdx/.venv/bin/python -m uvicorn autopilot.main:app --app-dir src --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
