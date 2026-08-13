@@ -36,7 +36,7 @@ def test_console_state_is_truthful_before_vm_setup() -> None:
 
     assert response.status_code == 200
     state = response.json()
-    assert state["connection"]["vm"] == "not-configured"
+    assert state["connection"]["vm"] == "not-connected"
     assert state["connection"]["ssh_tunnel"] == "not-configured"
     assert state["security"]["port_8000_public"] is False
     assert state["runtime"]["active_job_id"] is None
@@ -69,10 +69,11 @@ def test_dashboard_loads() -> None:
 
     assert response.status_code == 200
     assert "Oracle Arm64 VM not connected" in response.text
-    assert "Speed Mode" in response.text
-    assert "Serve More Users" in response.text
-    assert "Custom limits" in response.text
-    assert "Apply and start optimized model" in response.text
+    assert "Make it faster" in response.text
+    assert "Reduce disk size" in response.text
+    assert "Serve More Users" not in response.text
+    assert "Advanced engine controls" not in response.text
+    assert "candidate-rows" in response.text
 
 
 def test_memory_budget_cannot_exceed_vm_ram() -> None:
@@ -100,17 +101,11 @@ def test_model_catalog_exposes_memory_floor() -> None:
     assert model["estimated_minimum_memory_gb"] == 2.0
 
 
-def test_optimization_modes_expose_five_plain_language_goals() -> None:
+def test_optimization_modes_expose_three_working_goals() -> None:
     response = client.get("/api/optimization-modes")
 
     assert response.status_code == 200
-    assert [mode["id"] for mode in response.json()] == [
-        "speed",
-        "quality",
-        "lightweight",
-        "serve_more",
-        "custom",
-    ]
+    assert [mode["id"] for mode in response.json()] == ["speed", "quality", "lightweight"]
 
 
 def test_cannot_start_optimized_server_without_arm_evidence() -> None:

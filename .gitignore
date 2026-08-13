@@ -11,8 +11,20 @@ dist/
 models/*.gguf
 models/*.bin
 results/
+evidence/
+quality/
 *.sqlite3
+*.tar.gz
 .env
+
+# Local/private workspace files
+context.md
+.test-tmp/
+.pytest_cache/
+
+# Local Claude Code / OmniRoute credentials
+.claude/
+.claude.backup.json
 
 # Editor and operating-system files
 .vscode/

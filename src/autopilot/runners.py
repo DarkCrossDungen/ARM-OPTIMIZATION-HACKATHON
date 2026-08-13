@@ -65,19 +65,32 @@ def parse_llama_bench_output(raw: dict[str, Any] | list[dict[str, Any]]) -> Benc
     for entry in entries:
         if not isinstance(entry, dict):
             continue
-        test = str(entry.get("test", entry.get("name", ""))).lower()
+
+        # Current llama-bench JSON uses n_gen: 0 is prompt processing, >0 is generation.
+        # Older output uses a test/name field instead, so never assume missing n_gen means prompt.
+        n_gen = entry.get("n_gen")
         speed = entry.get("avg_ts", entry.get("tokens_per_second"))
+        test = str(entry.get("test", entry.get("name", ""))).lower()
+
         if isinstance(speed, (int, float)):
-            if test in {"pp", "prompt", "prompt_processing"}:
+            if isinstance(n_gen, int):
+                if n_gen == 0:
+                    prompt_speed = float(speed)
+                else:
+                    generation_speed = float(speed)
+            elif test in {"pp", "prompt", "prompt_processing"}:
                 prompt_speed = float(speed)
             elif test in {"tg", "generation", "token_generation"}:
                 generation_speed = float(speed)
+
+        # Extract other metrics
         for key, target in (("ttft_ms", "ttft"), ("peak_rss_mb", "rss"), ("model_size_mb", "size")):
             value = entry.get(key)
             if isinstance(value, (int, float)):
                 if target == "ttft": ttft_ms = float(value)
                 if target == "rss": peak_rss_mb = float(value)
                 if target == "size": model_size_mb = float(value)
+
     payload: dict[str, object] = raw if isinstance(raw, dict) else {"results": raw}
     return BenchmarkResult(prompt_speed, generation_speed, payload, ttft_ms, peak_rss_mb, model_size_mb)
 
