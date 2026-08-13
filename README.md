@@ -131,27 +131,111 @@ Arm KleidiAI is Arm's low-level micro-kernel library designed to accelerate tens
 ## Quick Start & Setup
 
 ### 1. Run Local Preview (Laptop)
-Preview the dashboard interface and benchmark workflow without an Arm VM connected:
+
+Preview the dashboard interface without a connected Arm VM:
+
 ```cmd
 .venv\Scripts\python.exe -m uvicorn autopilot.main:app --app-dir src --host 127.0.0.1 --port 8000
 ```
+
 Navigate to: `http://127.0.0.1:8000`
 
-### 2. Deploy on Arm64 VM (Azure Cobalt 100)
-1. Read the full **[Arm64 VM Setup Runbook](docs/arm64-vm-setup.md)**.
-2. Build the three `llama.cpp` binaries (`stock`, `kleidiai`, `kleidiai-openblas`).
-3. Download the approved Qwen2.5 GGUF quantization files.
-4. Install and enable the `armdx` systemd service:
-   ```bash
-   sudo cp deploy/armdx.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now armdx
-   ```
-5. Establish SSH local port forwarding from your laptop:
-   ```bash
-   ssh -i ~/.ssh/armdx_azure -N -L 127.0.0.1:8000:127.0.0.1:8000 azureuser@<VM_PUBLIC_IP>
-   ```
-6. Access `http://127.0.0.1:8000` in your browser and trigger a measured benchmark.
+---
+
+### 2. Deploy on Arm64 VM (Azure Cobalt 100) — Full Installation
+
+> See **[Arm64 VM Setup Runbook](docs/arm64-vm-setup.md)** for the complete step-by-step guide with all commands.
+
+#### Step 1 — Clone the repository on the VM
+
+```bash
+git clone https://github.com/DarkCrossDungen/ARM-OPTIMIZATION-HACKATHON.git armdx
+cd armdx
+```
+
+#### Step 2 — Install system packages and build all three llama.cpp variants
+
+```bash
+chmod +x scripts/setup-arm64-vm.sh
+./scripts/setup-arm64-vm.sh
+```
+
+This installs `build-essential cmake git libssl-dev libopenblas-dev python3-venv python3-pip`,
+clones `llama.cpp`, and builds:
+
+| Build directory | CMake flags |
+|---|---|
+| `llama.cpp/build-stock` | `-DGGML_CPU_KLEIDIAI=OFF` |
+| `llama.cpp/build-kleidiai` | `-DGGML_CPU_KLEIDIAI=ON` |
+| `llama.cpp/build-kleidiai-openblas` | `-DGGML_CPU_KLEIDIAI=ON -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS` |
+
+#### Step 3 — Prepare the Qwen2.5 GGUF model files
+
+The backend expects these files under `~/models/` (the service user's home directory):
+
+```text
+~/models/qwen2.5-1.5b-instruct-q8_0.gguf   (~1570 MB)
+~/models/qwen2.5-1.5b-instruct-q4_0.gguf   (~ 892 MB)
+~/models/qwen2.5-1.5b-instruct-q4_k_m.gguf (~1066 MB)
+```
+
+Convert from the Hugging Face source (requires `huggingface_hub`, already installed):
+
+```bash
+MODELS_DIR="$HOME/models"
+mkdir -p "$MODELS_DIR"
+
+python3 llama.cpp/convert_hf_to_gguf.py \
+  --remote Qwen/Qwen2.5-1.5B-Instruct \
+  --outfile "$MODELS_DIR/qwen2.5-1.5b-instruct-BF16.gguf" \
+  --outtype bf16
+
+llama.cpp/build-kleidiai/bin/llama-quantize \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-BF16.gguf" \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-q8_0.gguf" Q8_0
+
+llama.cpp/build-kleidiai/bin/llama-quantize \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-BF16.gguf" \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-q4_0.gguf" Q4_0
+
+llama.cpp/build-kleidiai/bin/llama-quantize \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-BF16.gguf" \
+  "$MODELS_DIR/qwen2.5-1.5b-instruct-q4_k_m.gguf" Q4_K_M
+
+rm "$MODELS_DIR/qwen2.5-1.5b-instruct-BF16.gguf"
+```
+
+#### Step 4 — Install and enable the systemd service
+
+```bash
+sudo bash scripts/install-armdx-service.sh "$(pwd)" azureuser
+sudo systemctl status armdx
+```
+
+The service binds to `127.0.0.1:8000` only — port 8000 is never exposed publicly.
+
+#### Step 5 — Open the dashboard via SSH tunnel
+
+**Linux / macOS:**
+
+```bash
+ssh -i ~/.ssh/armdx_azure -N -L 127.0.0.1:8000:127.0.0.1:8000 azureuser@<VM_PUBLIC_IP>
+```
+
+**Windows (PowerShell):**
+
+```powershell
+.\scripts\start-ssh-tunnel.ps1 -VmHost <VM_PUBLIC_IP> -KeyPath C:\Users\you\.ssh\armdx_azure -VmUser azureuser
+```
+
+#### Step 6 — Verify and run a benchmark
+
+```bash
+curl http://127.0.0.1:8000/api/health
+# {"status":"ok","mode":"arm64-live","vm":"connected"}
+```
+
+Open `http://127.0.0.1:8000`, select an optimization goal, and click **Run Optimization**.
 
 ---
 
