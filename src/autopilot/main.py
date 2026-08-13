@@ -20,15 +20,18 @@ from .runners import (
     ArmRuntimeBuild,
     BenchmarkRequest,
     BenchmarkResult,
-    OracleLlamaBenchRunner,
+    Arm64LlamaBenchRunner,
     RuntimeConfiguration,
     parse_llama_bench_output,
 )
+import json
 import platform
 import subprocess
 
 
 APP_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = APP_ROOT.parent.parent
+JOB_HISTORY_DIR = PROJECT_ROOT / "evidence" / "jobs"
 app = FastAPI(title="ArmDX", version="0.2.0")
 app.mount("/static", StaticFiles(directory=APP_ROOT / "static"), name="static")
 templates = Jinja2Templates(directory=APP_ROOT / "templates")
@@ -87,6 +90,35 @@ job_lock = Lock()
 active_job_id: str | None = None
 
 
+def persist_measured_job(job: dict[str, Any]) -> None:
+    """Persist completed Arm measurements so dashboard history survives restarts."""
+    if not job.get("evidence", {}).get("measured_on_arm"):
+        return
+    job_id = str(job["id"])
+    JOB_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    target = JOB_HISTORY_DIR / f"{job_id}.json"
+    temp = target.with_suffix(".tmp")
+    temp.write_text(json.dumps(job, indent=2, sort_keys=True), encoding="utf-8")
+    temp.replace(target)
+
+
+def load_measured_jobs() -> None:
+    """Load persisted Arm job history into memory at service startup."""
+    if not JOB_HISTORY_DIR.exists():
+        return
+    for path in sorted(JOB_HISTORY_DIR.glob("*.json")):
+        try:
+            job = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        job_id = job.get("id")
+        if isinstance(job_id, str) and job.get("evidence", {}).get("measured_on_arm"):
+            jobs[job_id] = job
+
+
+load_measured_jobs()
+
+
 def is_arm64() -> bool:
     """Check if we're running on ARM64 architecture."""
     machine = platform.machine().lower()
@@ -118,6 +150,11 @@ def run_real_arm_job(job_id: str) -> None:
             "quality": [("Q8_0", "kleidiai"), ("Q8_0", "kleidiai-openblas")],
             "lightweight": [("Q4_0", "stock"), ("Q4_0", "kleidiai"), ("Q4_K_M", "stock")],
         }[mode]
+        if mode == "lightweight":
+            missing = [quantization for quantization, _ in candidate_specs if not model_paths[quantization].exists()]
+            if missing:
+                missing_list = ", ".join(sorted(set(missing)))
+                raise FileNotFoundError(f"Reduce disk size needs prepared smaller GGUF files: {missing_list} in {models_dir}")
         phases = [{"name": name, "status": "pending", "detail": ""} for name in PHASE_NAMES]
         phases[0] = {"name": PHASE_NAMES[0], "status": "complete", "detail": "Request validated"}
         for index in (1, 2, 3):
@@ -145,7 +182,7 @@ def run_real_arm_job(job_id: str) -> None:
                 raise FileNotFoundError(f"Model not found: {model_path}")
             if not bench_path.exists():
                 raise FileNotFoundError(f"Benchmark binary not found: {bench_path}")
-            return OracleLlamaBenchRunner(bench_path, models_dir).run(BenchmarkRequest(
+            return Arm64LlamaBenchRunner(bench_path, models_dir).run(BenchmarkRequest(
                 model_path=model_path,
                 prompt_tokens=request.get("prompt_tokens", 1024),
                 generation_tokens=request.get("generation_tokens", 128),
@@ -155,7 +192,7 @@ def run_real_arm_job(job_id: str) -> None:
 
         baseline = run(baseline_model, "stock")
         phases[4] = {"name": PHASE_NAMES[4], "status": "complete", "detail": "Q8_0 stock baseline measured"}
-        phases[5] = {"name": PHASE_NAMES[5], "status": "running", "detail": "Testing Arm-optimized candidates"}
+        phases[5] = {"name": PHASE_NAMES[5], "status": "running", "detail": "Testing smaller GGUF candidates" if mode == "lightweight" else "Testing Arm-optimized candidates"}
         job["orchestration"]["phases"] = phases
 
         candidates: list[dict[str, Any]] = []
@@ -180,7 +217,7 @@ def run_real_arm_job(job_id: str) -> None:
             raise RuntimeError("No candidate benchmark completed successfully.")
         if mode == "lightweight":
             selected_data = min(valid_candidates, key=lambda candidate: float(candidate["model_size_mb"]))
-            selection_reason = "Smallest successfully measured GGUF file"
+            selection_reason = "Smallest successfully measured GGUF file versus the Q8_0 stock baseline"
         else:
             selected_data = max(valid_candidates, key=lambda candidate: float(candidate.get("prompt_tokens_per_second") or 0))
             selection_reason = "Best measured prompt-processing speed"
@@ -220,10 +257,12 @@ def run_real_arm_job(job_id: str) -> None:
         job["status"] = "complete"
         job["message"] = f"Optimization complete: {selected_data['quantization']} + {selected_data['build']} selected."
         job["finished_at"] = datetime.now(timezone.utc).isoformat()
+        persist_measured_job(job)
     except Exception as error:
         job["status"] = "failed"
         job["message"] = f"Benchmark failed: {error}"
         job["finished_at"] = datetime.now(timezone.utc).isoformat()
+        persist_measured_job(job)
     finally:
         with job_lock:
             if active_job_id == job_id:

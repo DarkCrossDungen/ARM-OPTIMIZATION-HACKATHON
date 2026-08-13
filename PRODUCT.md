@@ -12,24 +12,27 @@ Developers and hackathon judges who need to evaluate and tune local LLM inferenc
 
 ## Product Purpose
 
-ArmDX is a local operator console for safely controlling one remote Arm64 VM: it configures reproducible `llama.cpp` benchmark runs, observes their progress, and displays the measured evidence returned by that VM.
+ArmDX is a local operator console for safely controlling one remote Arm64 VM: it configures reproducible `llama.cpp` benchmark runs, observes their progress, stores evidence, and displays the measured result returned by that VM.
 
 ## Positioning
 
-The product does not claim a speedup in advance: it runs a reproducible Arm64 benchmark on the connected Oracle VM and preserves the raw output that supports each result.
+The product does not claim a speedup in advance. It runs matched benchmarks on the connected Azure Cobalt 100 Arm64 VM and preserves the raw output that supports each result.
 
 ## Operating Context
 
-The operator uses a localhost dashboard on a Windows laptop. Once an Oracle Arm64 VM is provisioned, the remote service runs only on the VM loopback interface and the laptop reaches it through a user-owned SSH local tunnel. At present the VM and SSH tunnel are not configured.
+The operator uses a localhost dashboard on a Windows laptop. The remote service runs only on the Arm64 VM loopback interface, and the laptop reaches it through a user-owned SSH local tunnel. The dashboard remains private; port 8000 is not opened to the internet.
 
 ## Capabilities and Constraints
 
-- MVP supports one `llama.cpp` GGUF model and one benchmark job at a time.
-- Safe controls cover objective, context size, threads, batch sizing, and a memory guardrail.
+- MVP supports one approved `llama.cpp` GGUF model family and one benchmark job at a time.
+- User-facing controls are intentionally simple: Make it faster, Keep quality, and Reduce disk size.
+- Speed mode compares the same `Q8_0` model across stock, KleidiAI, and KleidiAI + OpenBLAS runtime builds.
+- Lightweight mode compares smaller GGUF candidates and selects the smallest successfully measured profile.
+- Keep Quality mode keeps the high-fidelity `Q8_0` profile and selects the fastest measured Arm runtime.
 - Preview mode must show no invented performance figures while no Arm VM is connected.
-- The console must visibly distinguish local-preview, disconnected, connecting, ready, running, failed, and complete states.
-- The remote service must accept only an allowed model directory and safe runtime configuration.
-- Measured output must distinguish prompt processing, generation speed, and memory use.
+- The remote service must accept only allowed model paths and safe runtime configuration.
+- Measured output must distinguish prompt processing speed, generation speed, and model file size.
+- Measured job history is persisted under `evidence/jobs/` and reloads after service restart.
 
 ## Brand Commitments
 
@@ -38,9 +41,11 @@ The product name is ArmDX. The interface uses #000807, #b80c09, #f1f7ed, and #7c
 ## Evidence on Hand
 
 - [docs/product-spec.md](docs/product-spec.md) defines benchmark and evidence rules.
-- There is no connected Arm64 VM or measured benchmark result yet.
+- Live Azure Cobalt 100 Arm64 runs measured speed, quality-profile, and disk-size flows.
+- [results/summary.md](results/summary.md) summarizes the current measured demo results.
 
 ## Product Principles
 
 1. Show what is measured and keep unknown values visibly unknown.
 2. Make safe Arm64 tuning understandable without hiding constraints.
+3. Prefer truthful evidence over promotional claims.

@@ -10,7 +10,8 @@ dist/
 # Runtime data and downloaded models
 models/*.gguf
 models/*.bin
-results/
+results/*
+!results/summary.md
 evidence/
 quality/
 *.sqlite3

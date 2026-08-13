@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run on an Ubuntu Arm64 Oracle Ampere A1 VM after cloning this repository.
+# Run on an Ubuntu-compatible Arm64 Linux VM after cloning this repository.
 sudo apt-get update
 sudo apt-get install --yes build-essential cmake git libssl-dev libopenblas-dev python3-venv python3-pip
 

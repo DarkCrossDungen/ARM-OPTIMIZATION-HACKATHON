@@ -68,12 +68,13 @@ def test_dashboard_loads() -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Oracle Arm64 VM not connected" in response.text
+    assert "Arm64 VM connection status" in response.text
     assert "Make it faster" in response.text
     assert "Reduce disk size" in response.text
     assert "Serve More Users" not in response.text
     assert "Advanced engine controls" not in response.text
     assert "candidate-rows" in response.text
+    assert "Benchmark workload" not in response.text
 
 
 def test_memory_budget_cannot_exceed_vm_ram() -> None:

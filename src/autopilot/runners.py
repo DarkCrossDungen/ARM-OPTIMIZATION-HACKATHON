@@ -168,7 +168,7 @@ class ArmModelTransformer:
             raise ValueError("Model artifact must remain inside the configured models directory.")
 
 
-class OracleLlamaBenchRunner:
+class Arm64LlamaBenchRunner:
     """Adapter for llama-bench on the Arm64 VM; never used in local preview."""
 
     def __init__(self, llama_bench_path: Path, allowed_models_dir: Path) -> None:
